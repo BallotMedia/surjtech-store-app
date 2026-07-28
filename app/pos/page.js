@@ -108,13 +108,24 @@ export default function PosPage() {
         <div className="lg:col-span-2">
           <h1 className="font-display text-2xl mb-4">Sales / POS</h1>
           <div className="relative mb-4">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)] pointer-events-none"
+              aria-hidden="true"
+            >
+              <path d="M4 5v14M8 5v14M11 5v14M13 5v14M16 5v14M19 5v3M19 16v3" />
+            </svg>
             <input
               ref={inputRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={onScanEnter}
               placeholder="Scan barcode or search product name / code…"
-              className="w-full border border-[var(--line)] rounded-lg px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+              className="w-full border border-[var(--line)] rounded-lg pl-11 pr-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
             />
             {results.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border border-[var(--line)] rounded-lg shadow-lg max-h-64 overflow-y-auto">

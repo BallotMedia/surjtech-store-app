@@ -199,12 +199,25 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by name, code, or scan/enter barcode…"
-        className="w-full mb-5 border border-[var(--line)] rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-      />
+      <div className="relative mb-5">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)] pointer-events-none"
+          aria-hidden="true"
+        >
+          <path d="M4 5v14M8 5v14M11 5v14M13 5v14M16 5v14M19 5v3M19 16v3" />
+        </svg>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search by name, code, or scan/enter barcode…"
+          className="w-full border border-[var(--line)] rounded-lg pl-11 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+        />
+      </div>
 
       <div className="bg-white rounded-2xl border border-[var(--line)] overflow-hidden">
         <div className="overflow-x-auto"><table className="w-full text-sm min-w-[640px]">
