@@ -292,8 +292,26 @@ export default function ProductsPage() {
             </div>
             <Field label="Product Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
             <div className="grid grid-cols-2 gap-3">
-              <Select label="Brand" value={form.brandId} onChange={(v) => setForm({ ...form, brandId: v })} options={brands} />
-              <Select label="Category" value={form.categoryId} onChange={(v) => setForm({ ...form, categoryId: v })} options={categories} />
+              <SelectWithAdd
+                label="Brand" value={form.brandId} onChange={(v) => setForm({ ...form, brandId: v })} options={brands}
+                onAdd={async (name) => {
+                  const res = await fetch("/api/brands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+                  const d = await res.json();
+                  if (!res.ok) throw new Error(d.error || "Failed to add brand");
+                  setBrands((b) => [...b, d.brand].sort((a, c) => a.name.localeCompare(c.name)));
+                  return d.brand;
+                }}
+              />
+              <SelectWithAdd
+                label="Category" value={form.categoryId} onChange={(v) => setForm({ ...form, categoryId: v })} options={categories}
+                onAdd={async (name) => {
+                  const res = await fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+                  const d = await res.json();
+                  if (!res.ok) throw new Error(d.error || "Failed to add category");
+                  setCategories((c) => [...c, d.category].sort((a, b) => a.name.localeCompare(b.name)));
+                  return d.category;
+                }}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Cost Price (₦)" type="number" value={form.costPrice} onChange={(v) => setForm({ ...form, costPrice: v })} required />
@@ -304,7 +322,16 @@ export default function ProductsPage() {
               <Field label="Reorder Level" type="number" value={form.reorderLevel} onChange={(v) => setForm({ ...form, reorderLevel: v })} />
               <Field label="Warranty (months)" type="number" value={form.warrantyMonths} onChange={(v) => setForm({ ...form, warrantyMonths: v })} />
             </div>
-            <Select label="Supplier" value={form.supplierId} onChange={(v) => setForm({ ...form, supplierId: v })} options={suppliers} />
+            <SelectWithAdd
+              label="Supplier" value={form.supplierId} onChange={(v) => setForm({ ...form, supplierId: v })} options={suppliers}
+              onAdd={async (name) => {
+                const res = await fetch("/api/suppliers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || "Failed to add supplier");
+                setSuppliers((s) => [...s, d.supplier].sort((a, b) => a.name.localeCompare(b.name)));
+                return d.supplier;
+              }}
+            />
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2 pt-2">
               <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-[var(--line)] rounded-lg py-2.5 text-sm">Cancel</button>
@@ -339,20 +366,77 @@ function Field({ label, value, onChange, type = "text", required }) {
   );
 }
 
-function Select({ label, value, onChange, options }) {
+function SelectWithAdd({ label, value, onChange, options, onAdd }) {
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function submitAdd() {
+    if (!newName.trim()) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const created = await onAdd(newName.trim());
+      onChange(String(created.id));
+      setAdding(false);
+      setNewName("");
+    } catch (e) {
+      setErr(e.message || "Failed to add");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <label className="block">
-      <span className="block text-xs font-medium text-[var(--muted)] mb-1">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
-      >
-        <option value="">—</option>
-        {options.map((o) => (
-          <option key={o.id} value={o.id}>{o.name}</option>
-        ))}
-      </select>
-    </label>
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="block text-xs font-medium text-[var(--muted)]">{label}</span>
+        <button
+          type="button"
+          onClick={() => { setAdding((a) => !a); setErr(""); setNewName(""); }}
+          className="text-xs text-[var(--brand)] hover:underline"
+        >
+          {adding ? "Cancel" : "+ Add new"}
+        </button>
+      </div>
+      {!adding ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+        >
+          <option value="">—</option>
+          {options.map((o) => (
+            <option key={o.id} value={o.id}>{o.name}</option>
+          ))}
+        </select>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            autoFocus
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder={`New ${label.toLowerCase()} name`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submitAdd();
+              }
+            }}
+            className="flex-1 border border-[var(--line)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+          />
+          <button
+            type="button"
+            onClick={submitAdd}
+            disabled={busy}
+            className="px-3 py-2 text-sm bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white rounded-lg disabled:opacity-60"
+          >
+            {busy ? "…" : "Add"}
+          </button>
+        </div>
+      )}
+      {err && <p className="text-xs text-[var(--danger)] mt-1">{err}</p>}
+    </div>
   );
 }
