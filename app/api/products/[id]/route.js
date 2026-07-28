@@ -14,15 +14,21 @@ export async function PUT(req, { params }) {
 
   const update = {};
   for (const key of [
-    "productCode", "barcode", "name", "brandId", "categoryId",
+    "productCode", "name", "brandId", "categoryId",
     "supplierId", "quantity", "reorderLevel", "warrantyMonths", "status",
   ]) {
     if (body[key] !== undefined) update[key] = body[key];
   }
+  if (body.barcode !== undefined) update.barcode = body.barcode?.trim() ? body.barcode.trim() : null;
   if (body.costPrice !== undefined) update.costPrice = String(body.costPrice);
   if (body.sellingPrice !== undefined) update.sellingPrice = String(body.sellingPrice);
 
-  const [updated] = await db.update(products).set(update).where(eq(products.id, Number(id))).returning();
+  let updated;
+  try {
+    [updated] = await db.update(products).set(update).where(eq(products.id, Number(id))).returning();
+  } catch (e) {
+    return NextResponse.json({ error: "Product code or barcode already in use by another product" }, { status: 409 });
+  }
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ product: updated });
 }
