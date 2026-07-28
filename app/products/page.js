@@ -4,6 +4,7 @@ import Shell from "@/components/Shell";
 import { naira } from "@/lib/format";
 import { useSession } from "@/lib/useSession";
 import Papa from "papaparse";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 const emptyForm = {
   productCode: "", barcode: "", name: "", brandId: "", categoryId: "",
@@ -23,6 +24,7 @@ export default function ProductsPage() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
@@ -215,8 +217,19 @@ export default function ProductsPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name, code, or scan/enter barcode…"
-          className="w-full border border-[var(--line)] rounded-lg pl-11 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+          className="w-full border border-[var(--line)] rounded-lg pl-11 pr-11 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
         />
+        <button
+          type="button"
+          onClick={() => setScannerOpen(true)}
+          aria-label="Scan barcode with camera"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--brand)] hover:bg-[var(--bg)]"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
+            <circle cx="12" cy="12" r="3.5" />
+          </svg>
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-[var(--line)] overflow-hidden">
@@ -299,6 +312,13 @@ export default function ProductsPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {scannerOpen && (
+        <BarcodeScanner
+          onDetected={(code) => setQ(code)}
+          onClose={() => setScannerOpen(false)}
+        />
       )}
     </Shell>
   );

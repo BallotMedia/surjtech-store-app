@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import { naira } from "@/lib/format";
 import Receipt from "@/components/Receipt";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 export default function PosPage() {
   const [q, setQ] = useState("");
@@ -16,6 +17,7 @@ export default function PosPage() {
   const [error, setError] = useState("");
   const [lastSale, setLastSale] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -51,6 +53,17 @@ export default function PosPage() {
       // exact barcode/code match wins
       const exact = results.find((r) => r.barcode === q || r.productCode === q);
       if (exact) addToCart(exact);
+    }
+  }
+
+  async function onCameraDetected(code) {
+    const res = await fetch(`/api/products?q=${encodeURIComponent(code)}`);
+    const d = await res.json();
+    const match = (d.products || []).find((r) => r.barcode === code) || (d.products || [])[0];
+    if (match) {
+      addToCart(match);
+    } else {
+      setError(`No product found for barcode ${code}`);
     }
   }
 
@@ -125,8 +138,19 @@ export default function PosPage() {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={onScanEnter}
               placeholder="Scan barcode or search product name / code…"
-              className="w-full border border-[var(--line)] rounded-lg pl-11 pr-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+              className="w-full border border-[var(--line)] rounded-lg pl-11 pr-11 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
             />
+            <button
+              type="button"
+              onClick={() => setScannerOpen(true)}
+              aria-label="Scan barcode with camera"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--brand)] hover:bg-[var(--bg)]"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
+                <circle cx="12" cy="12" r="3.5" />
+              </svg>
+            </button>
             {results.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border border-[var(--line)] rounded-lg shadow-lg max-h-64 overflow-y-auto">
                 {results.map((p) => (
@@ -287,6 +311,14 @@ export default function PosPage() {
 
       {lastSale && (
         <Receipt sale={lastSale} settings={settings} onClose={() => setLastSale(null)} />
+      )}
+
+      {scannerOpen && (
+        <BarcodeScanner
+          continuous
+          onDetected={onCameraDetected}
+          onClose={() => setScannerOpen(false)}
+        />
       )}
     </Shell>
   );
